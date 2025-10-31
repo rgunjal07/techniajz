@@ -28,10 +28,10 @@ pipeline {
             }
         }
 
-        stage('Build') {
+         stage('Build') {
             steps {
-                echo "Building the project..."
-                sh 'npm run build''
+                echo "Building..."
+                sh 'npm run build'
             }
         }
 
