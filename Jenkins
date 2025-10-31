@@ -1,0 +1,68 @@
+pipeline {
+     agent any
+
+
+    options {
+        timestamps()
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo "Checking out source code..."
+                git branch: 'master',
+                    url: 'https://github.com/rgunjal07/techniajz.git',
+                    credentialsId: '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'  // 🔒 Jenkins credential ID
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                echo "Installing dependencies..."
+                sh 'npm install'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo "Building the project..."
+                sh 'npm run build'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo "Running tests..."
+                sh 'npm test'
+            }
+            post {
+                always {
+                    junit 'reports/**/*.xml'
+                }
+            }
+        }
+
+        stage('Deploy') {
+            when {
+                branch 'main'
+            }
+            steps {
+                echo "Deploying application..."
+                sh './deploy.sh'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Build and deployment successful!"
+        }
+        failure {
+            echo "❌ Build failed!"
+        }
+        always {
+            cleanWs()
+        }
+    }
+}
