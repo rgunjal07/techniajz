@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_HUB_USER = "rgunjal"
+        DOCKER_HUB_USER = "jenkins-blueocean"
         IMAGE_NAME = "myjenkins_blueocean"   // ✅ underscores or hyphens are OK
         IMAGE_TAG = "2.414.2"                // ✅ tag part only
     }
