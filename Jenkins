@@ -24,14 +24,14 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 echo "Installing dependencies..."
-                sh 'npm install'
+               sh 'npm ci'
             }
         }
 
         stage('Build') {
             steps {
                 echo "Building the project..."
-                sh 'npm ci'
+                sh 'npm run build''
             }
         }
 
