@@ -1,0 +1,46 @@
+# Base Jenkins LTS with Java 11
+FROM jenkins/jenkins:2.414.2-jdk11
+
+# Switch to root to install packages
+USER root
+
+# Install dependencies and Docker CLI
+RUN apt-get update && apt-get install -y \
+    curl \
+    gnupg2 \
+    lsb-release \
+    python3-pip \
+    ca-certificates \
+    apt-transport-https \
+    && rm -rf /var/lib/apt/lists/*
+
+# Add Docker’s official GPG key and repository
+RUN curl -fsSLo /usr/share/keyrings/docker-archive-keyring.asc \
+    https://download.docker.com/linux/debian/gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) \
+    signed-by=/usr/share/keyrings/docker-archive-keyring.asc] \
+    https://download.docker.com/linux/debian \
+    $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
+
+# Install Docker CLI
+RUN apt-get update && apt-get install -y docker-ce-cli && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Node.js (LTS) and npm
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs && \
+    npm install -g npm@latest && \
+    rm -rf /var/lib/apt/lists/*
+
+# Switch back to Jenkins user
+USER jenkins
+
+# Install essential Jenkins plugins
+RUN jenkins-plugin-cli --plugins \
+    "blueocean:1.25.3 docker-workflow:1.28 workflow-aggregator:590.v6a_d052e5a_a_b_5"
+
+# Expose Jenkins port
+EXPOSE 8080
+
+# Default Jenkins entrypoint
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/jenkins.sh"]
