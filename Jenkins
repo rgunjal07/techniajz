@@ -3,8 +3,8 @@ pipeline {
 
     environment {
         DOCKER_HUB_USER = "rgunjal"
-        IMAGE_NAME = "myjenkins-blueocean:2.414.2"
-        IMAGE_TAG = "5ba9b9a5dcce" // or use "${env.BUILD_NUMBER}" for unique build tags
+        IMAGE_NAME = "myjenkins_blueocean"   // ✅ underscores or hyphens are OK
+        IMAGE_TAG = "2.414.2"                // ✅ tag part only
     }
 
     options {
@@ -13,7 +13,6 @@ pipeline {
     }
 
     stages {
-
         stage('Checkout') {
             steps {
                 echo "📦 Checking out source code..."
