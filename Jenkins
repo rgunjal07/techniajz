@@ -2,8 +2,8 @@ pipeline {
     agent {
         // Run the pipeline inside a Docker-enabled agent
         docker {
-            image 'docker:24.0.2-dind' // Docker-in-Docker image
-            args '--privileged -v /var/run/docker.sock:/var/run/docker.sock'
+            image 'myjenkins-blueocean:2.414.2' // Docker-in-Docker image
+            args '/usr/bin/tini -- /u…'
         }
     }
 
