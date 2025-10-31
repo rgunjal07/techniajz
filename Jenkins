@@ -2,71 +2,50 @@ pipeline {
     agent any
 
     environment {
-        APP_NAME = "my-app"
-        BUILD_DIR = "build"
-    }
-
-    options {
-        timestamps()
-        buildDiscarder(logRotator(numToKeepStr: '10'))
+        IMAGE_NAME = "jenkins-with-node"
+        DOCKER_HUB_USER = "rgunjal"
     }
 
     stages {
         stage('Checkout') {
             steps {
-                echo "Checking out source code..."
-                git branch: 'master',
-                    url: 'https://github.com/rgunjal07/techniajz.git',
-                    credentialsId: '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'  // 🔒 Jenkins credential ID
+                git branch: 'master', url: 'https://github.com/rgunjal07/techniajz.git'
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Build Docker Image') {
             steps {
-                echo "Installing dependencies..."
-                sh 'npm install'
-            }
-        }
-
-        stage('Build') {
-            steps {
-                echo "Building the project..."
-                sh 'npm run build'
-            }
-        }
-
-        stage('Test') {
-            steps {
-                echo "Running tests..."
-                sh 'npm test'
-            }
-            post {
-                always {
-                    junit 'reports/**/*.xml'
+                script {
+                    docker.build("${IMAGE_NAME}:latest")
                 }
             }
         }
 
-        stage('Deploy') {
-            when {
-                branch 'master'
-            }
+        stage('Run Tests') {
             steps {
-                echo "Deploying application..."
-                sh './deploy.sh'
+                script {
+                    // Example: Run container for testing
+                    docker.image("${IMAGE_NAME}:latest").inside {
+                        sh 'npm test'
+                    }
+                }
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', 'rgunjal') {
+                        docker.image("${IMAGE_NAME}:latest").push()
+                    }
+                }
             }
         }
     }
 
     post {
-        success {
-            echo "✅ Build and deployment successful!"
-        }
-        failure {
-            echo "❌ Build failed!"
-        }
         always {
-            cleanWs()
+            echo 'Pipeline completed!'
         }
     }
 }
