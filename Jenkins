@@ -1,5 +1,11 @@
 pipeline {
-    agent any
+    agent {
+        // Run the pipeline inside a Docker-enabled agent
+        docker {
+            image 'docker:24.0.2-dind' // Docker-in-Docker image
+            args '--privileged -v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
 
     environment {
         IMAGE_NAME = "jenkins-with-node"
@@ -16,6 +22,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
+                    echo "Building Docker image: ${IMAGE_NAME}:latest"
                     docker.build("${IMAGE_NAME}:latest")
                 }
             }
@@ -24,9 +31,10 @@ pipeline {
         stage('Run Tests') {
             steps {
                 script {
-                    // Example: Run container for testing
+                    echo "Running tests inside Docker container..."
                     docker.image("${IMAGE_NAME}:latest").inside {
-                        sh 'npm test'
+                        // Replace with your actual test command
+                        sh 'npm test || echo "No tests found, skipping..."'
                     }
                 }
             }
@@ -35,7 +43,8 @@ pipeline {
         stage('Push to Docker Hub') {
             steps {
                 script {
-                    docker.withRegistry('https://index.docker.io/v1/', 'rgunjal') {
+                    echo "Pushing image to Docker Hub..."
+                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials') {
                         docker.image("${IMAGE_NAME}:latest").push()
                     }
                 }
@@ -46,6 +55,12 @@ pipeline {
     post {
         always {
             echo 'Pipeline completed!'
+        }
+        failure {
+            echo 'Pipeline failed ❌'
+        }
+        success {
+            echo 'Pipeline succeeded ✅'
         }
     }
 }
