@@ -1,51 +1,68 @@
 pipeline {
-    agent any
+     agent any
 
-    environment {
-        IMAGE_NAME = "myjenkins-blueocean:2.414.2"
-        DOCKER_HUB_USER = "rgunjal"
+
+    options {
+        timestamps()
+        buildDiscarder(logRotator(numToKeepStr: '10'))
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'master', url: 'https://github.com/rgunjal07/techniajz.git'
+                echo "Checking out source code..."
+                git branch: 'master',
+                    url: 'https://github.com/rgunjal07/techniajz.git',
+                    credentialsId: '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'  // 🔒 Jenkins credential ID
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Install Dependencies') {
             steps {
-                script {
-                    docker.build("${IMAGE_NAME}:latest")
+                echo "Installing dependencies..."
+                sh 'npm install'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo "Building the project..."
+                sh 'npm run build'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo "Running tests..."
+                sh 'npm test'
+            }
+            post {
+                always {
+                    junit 'reports/**/*.xml'
                 }
             }
         }
 
-        stage('Run Tests') {
-            steps {
-                script {
-                    // Example: Run container for testing
-                    docker.image("${IMAGE_NAME}:latest").inside {
-                        sh 'npm test'
-                    }
-                }
+        stage('Deploy') {
+            when {
+                branch 'main'
             }
-        }
-
-        stage('Push to Docker Hub') {
             steps {
-                script {
-                    docker.withRegistry('https://index.docker.io/v1/', 'rgunjal') {
-                        docker.image("${IMAGE_NAME}:latest").push()
-                    }
-                }
+                echo "Deploying application..."
+                sh './deploy.sh'
             }
         }
     }
 
     post {
+        success {
+            echo "✅ Build and deployment successful!"
+        }
+        failure {
+            echo "❌ Build failed!"
+        }
         always {
-            echo 'Pipeline completed!'
+            cleanWs()
         }
     }
 }
