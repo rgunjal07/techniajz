@@ -8,7 +8,7 @@ pipeline {
     }
 
     environment {
-        IMAGE_NAME = "myjenkins-blueocean:2.414.2"
+        IMAGE_NAME = "alpine/socat"
         DOCKER_HUB_USER = "rgunjal"
     }
 
