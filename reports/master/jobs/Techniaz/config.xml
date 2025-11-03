@@ -1,7 +1,66 @@
 <?xml version='1.1' encoding='UTF-8'?>
 <flow-definition plugin="workflow-job@1559.va_a_533730b_ea_d">
+  <actions/>
+  <description></description>
   <keepDependencies>false</keepDependencies>
-  <properties/>
+  <properties>
+    <com.coravy.hudson.plugins.github.GithubProjectProperty plugin="github@1.45.0">
+      <projectUrl>https://github.com/rgunjal07/techniajz.git/</projectUrl>
+      <displayName></displayName>
+    </com.coravy.hudson.plugins.github.GithubProjectProperty>
+  </properties>
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@4218.vff679a_5c0f3a_">
+    <script>pipeline {
+    agent any
+
+    environment {
+        // Optionally set Java Home if you have a JDK configured in Jenkins
+        // JAVA_HOME = tool(name: &apos;JDK17&apos;, type: &apos;jdk&apos;)
+        // PATH = &quot;${JAVA_HOME}/bin:${PATH}&quot;
+    }
+
+    stages {
+        stage(&apos;Checkout&apos;) {
+            steps {
+                echo &quot;Cloning source code from GitHub...&quot;
+                git &apos;https://github.com/rgunjal07/techniajz.git&apos;
+            }
+        }
+
+        stage(&apos;Build&apos;) {
+            steps {
+                echo &quot;Running Maven build...&quot;
+                sh &apos;mvn -Dmaven.test.failure.ignore=true clean package&apos;
+            }
+        }
+
+        stage(&apos;Test Results&apos;) {
+            steps {
+                echo &quot;Publishing test results...&quot;
+                junit &apos;**/target/surefire-reports/TEST-*.xml&apos;
+            }
+        }
+
+        stage(&apos;Archive Artifacts&apos;) {
+            steps {
+                echo &quot;Archiving generated JARs...&quot;
+                archiveArtifacts artifacts: &apos;target/*.jar&apos;, fingerprint: true
+            }
+        }
+    }
+
+    post {
+        success {
+            echo &quot;✅ Build completed successfully!&quot;
+        }
+        failure {
+            echo &quot;❌ Build failed. Please check logs.&quot;
+        }
+    }
+}
+</script>
+    <sandbox>true</sandbox>
+  </definition>
   <triggers/>
   <disabled>false</disabled>
 </flow-definition>

@@ -1,28 +1,53 @@
 pipeline {
-    agent any
+    agent {
+        docker{
+            image "rgunjal/techniajz:latest"
+            label 'master'
+            args '-v /var/run/docker.sock:/var/run/docker.sock' // Necessary if you want Docker commands to run inside the container
+        }
+    }
+    environment{
+        JAVA_HOME = '/usr/lib/jvm/java-17-openjdk-amd64'
+        PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
+    }
+
     stages {
-        stage('Checkout') {
+        stage('Checkout code from GIT') {
             steps {
-                git 'https://github.com/rgunjal07/techniajz.git'
+                git branch:'master', url:"https://github.com/rgunjal07/techniajz.git"
             }
         }
-        stage('Build') {
+        stage('Run The Tests') {
             steps {
-                sh 'mvn clean package -DskipTests'
-            }
-        }
-        stage('Test') {
-            steps {
-                sh 'mvn test'
-            }
-        }
-        stage('Docker Build') {
-            steps {
-                sh 'docker build -t rgunjal/techniajz .'
+                script{
+                sh 'mvn clean test'
+                }
             }
         }
     }
+
+    post {
+            always {
+                script {
+                    // Ensure graceful handling of Docker containers
+                    try {
+                        echo "Attempting to stop and remove any additional test containers..."
+                        // Gracefully stop and remove containers if necessary
+                        // Get the container ID for test container(s), if any, and stop them
+                        def containerIds = sh(script: 'docker ps -q --filter "ancestor=pgupta584/apijavaimage:testng"', returnStdout: true).trim()
+                        if (containerIds) {
+                            // Stop the test containers that were used during the test execution
+                            sh "docker stop ${containerIds}"
+                            // Optionally remove the containers
+                            sh "docker rm ${containerIds}"
+                        } else {
+                            echo "No test containers found to stop/remove."
+                        }
+                    } catch (Exception e) {
+                        // Handle any exceptions that occur during the container stop/remove process
+                        echo "Error in stopping/removing Docker containers: ${e.message}"
+                    }
+                }
+            }
+        }
 }
-
-
-
